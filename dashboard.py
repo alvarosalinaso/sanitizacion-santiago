@@ -6,7 +6,8 @@ from typing import Any
 import dash
 import pandas as pd
 import plotly.express as px
-from dash import Input, Output, callback, dcc, html
+import plotly.graph_objects as go
+from dash import Input, Output, callback, dcc, html, no_update
 
 app = dash.Dash(
     __name__,
@@ -115,6 +116,49 @@ def mondrian_title(text):
     })
 
 
+BAUHAUS_POSTER_SVG = (
+    "data:image/svg+xml,"
+    "%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='90' viewBox='0 0 1200 90'%3E"
+    "%3Crect width='1200' height='90' fill='%23ffffff'/%3E"
+    "%3Ccircle cx='80' cy='45' r='30' fill='%23cc0000'/%3E"
+    "%3Crect x='150' y='15' width='60' height='60' fill='%230033cc'/%3E"
+    "%3Cpolygon points='250,75 280,15 310,75' fill='%23ffcc00' stroke='%23000000' stroke-width='4'/%3E"
+    "%3Cg stroke='%23000000' stroke-width='2' opacity='0.12'%3E"
+    "%3Cline x1='0' y1='22' x2='1200' y2='22'/%3E%3Cline x1='0' y1='45' x2='1200' y2='45'/%3E%3Cline x1='0' y1='68' x2='1200' y2='68'/%3E"
+    "%3C/g%3E%3Ccircle cx='1050' cy='45' r='10' fill='%23000000'/%3E"
+    "%3Ccircle cx='1080' cy='45' r='10' fill='%23cc0000'/%3E"
+    "%3Ccircle cx='1110' cy='45' r='10' fill='%230033cc'/%3E"
+    "%3C/svg%3E"
+)
+
+
+def sparkline(values, color=RED):
+    if not values or len(values) < 2:
+        return html.Div(style={"height": "34px"})
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        y=list(values), mode="lines",
+        line={"color": color, "width": 3, "shape": "spline"},
+        fill="tozeroy", hoverinfo="skip", showlegend=False,
+    ))
+    fig.update_layout(
+        margin={"t": 0, "b": 0, "l": 0, "r": 0},
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        xaxis={"visible": False}, yaxis={"visible": False}, height=34,
+    )
+    return dcc.Graph(figure=fig, config={"displayModeBar": False}, style={"height": "34px"})
+
+
+def insight_card(question, answer, accent=RED):
+    return html.Div(
+        style={**BLOCK_STYLE, "borderLeft": f"8px solid {accent}", "padding": "14px 16px", "backgroundColor": WHITE, "marginBottom": "12px"},
+        children=[
+            html.Div(question, style={"fontWeight": "800", "textTransform": "uppercase", "fontSize": "0.72rem", "letterSpacing": "0.08em"}),
+            html.Div(answer, style={"marginTop": "4px", "fontSize": "0.88rem", "lineHeight": "1.5"}),
+        ],
+    )
+
+
 app.layout = html.Div(
     style={
         "backgroundColor": WHITE, "minHeight": "100vh",
@@ -140,6 +184,11 @@ app.layout = html.Div(
                 }),
             ],
         ),
+        html.Div(style={
+            "backgroundImage": f"url(\"{BAUHAUS_POSTER_SVG}\")",
+            "backgroundSize": "cover", "backgroundPosition": "center",
+            "height": "90px", "borderBottom": MONDRIAN_BORDER,
+        }),
         html.Div(style={
             "display": "flex", "gap": "0", "padding": "0",
             "flexWrap": "wrap", "borderBottom": MONDRIAN_BORDER,
@@ -262,6 +311,7 @@ def _error_block(msg):
 
 
 def map_tab(df):
+    total = len(df)
     fig = px.scatter_mapbox(
         df, lat="lat", lon="lon", color="type",
         hover_name="name", hover_data=["description", "type"],
@@ -269,14 +319,28 @@ def map_tab(df):
         mapbox_style="carto-positron",
         color_discrete_map=TYPE_COLORS,
     )
+    fig.update_traces(
+        hovertemplate="<b>%{hovertext}</b><br>%{customdata[0]}<br>Tipo: %{customdata[1]}<br>%{lat:.4f}°, %{lon:.4f}°<extra></extra>",
+    )
     fig.update_layout(
         template="plotly_white", paper_bgcolor=WHITE, plot_bgcolor=WHITE,
         height=600, margin=dict(t=10, b=10, l=10, r=10),
         legend=dict(bgcolor=WHITE, bordercolor=BLACK, borderwidth=2,
                     font=dict(color=BLACK, size=11)),
     )
-    count_block = stat_block(len(df), "puntos", RED)
-    return html.Div(style={"display": "flex", "gap": "0", "flexWrap": "wrap"}, children=[
+    by_type = df["type"].value_counts()
+    top_type = by_type.index[0] if len(by_type) else "—"
+    count_block = stat_block(total, "puntos", RED)
+    insights = html.Div(style={**BLOCK_STYLE, "backgroundColor": WHITE, "padding": "16px 18px", "marginBottom": "0"}, children=[
+        mondrian_title("Key Insights"),
+        insight_card("¿Problema?", f"{total} solicitudes dispersas sin priorización visible por tipo ni calle.", RED),
+        insight_card("¿Metodología?", f"Georreferenciación validada + top tipo '{top_type}' ({by_type.iloc[0] if len(by_type) else 0} casos) para focalizar cuadrillas.", BLUE),
+        insight_card("¿Decisión?", "Asignar rutas por calle frecuente y tipo dominante; clic en barras de Distribución para filtrar.", YELLOW),
+        sparkline(by_type.values.tolist(), RED),
+    ])
+    return html.Div(children=[
+        insights,
+        html.Div(style={"display": "flex", "gap": "0", "flexWrap": "wrap"}, children=[
         html.Div(style={**BLOCK_STYLE, "flex": "3", "minWidth": "300px", "backgroundColor": RED}, children=[
             html.Div(CARD_BODY, children=[
                 mondrian_title("Mapa de Sanitización"),
@@ -303,16 +367,23 @@ def map_tab(df):
                 }),
             ]),
         ]),
+        ]),
     ])
 
 
 def dist_tab(df):
     tipo_counts = df["type"].value_counts()
 
+    total = len(df)
     fig_bar = px.bar(
         x=tipo_counts.index, y=tipo_counts.values,
         color=tipo_counts.index, color_discrete_map=TYPE_COLORS,
         labels={"x": "Tipo", "y": "Cantidad"},
+        title="Puntos por Tipo — clic una barra para filtrar",
+    )
+    fig_bar.update_traces(
+        hovertemplate="<b>%{x}</b><br>Cantidad: %{y}<br>%{y:.0%} de " + str(total) + "<extra></extra>",
+        marker_line_width=2, marker_line_color=BLACK,
     )
     fig_bar.update_layout(
         template="plotly_white", paper_bgcolor=WHITE, plot_bgcolor=WHITE,
@@ -353,11 +424,13 @@ yaxis={"categoryorder": "total ascending"},
     xaxis=dict(showgrid=False),
     )
 
-    return html.Div(style={"display": "flex", "gap": "0", "flexWrap": "wrap"}, children=[
+    return html.Div(children=[
+        html.Div(id="dist-crossfilter-output", style={"fontWeight": "800", "padding": "10px 20px", "borderBottom": MONDRIAN_BORDER}),
+        html.Div(style={"display": "flex", "gap": "0", "flexWrap": "wrap"}, children=[
         html.Div(style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px", "backgroundColor": WHITE}, children=[
             html.Div(CARD_BODY, children=[
                 mondrian_title("Puntos por Tipo"),
-                dcc.Graph(figure=fig_bar),
+                dcc.Graph(id="dist-type-bar", figure=fig_bar),
             ]),
         ]),
         html.Div(style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px", "backgroundColor": BLUE}, children=[
@@ -372,7 +445,20 @@ yaxis={"categoryorder": "total ascending"},
                 dcc.Graph(figure=fig_streets),
             ]),
         ]),
+        ]),
     ])
+
+
+@callback(
+    Output("dist-crossfilter-output", "children"),
+    Input("dist-type-bar", "clickData"),
+    prevent_initial_call=True,
+)
+def dist_crossfilter(click):
+    if not click:
+        return no_update
+    t = click["points"][0].get("x", "?")
+    return f"Tipo seleccionado: {t} — usa el filtro superior para aislarlo en Mapa y Análisis."
 
 
 def analysis_tab(df):
