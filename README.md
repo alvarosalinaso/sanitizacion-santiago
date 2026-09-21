@@ -17,12 +17,11 @@ The application is an interactive Dash dashboard featuring:
 
 | Type | Description |
 |------|-------------|
-| Cité | Cité-style housing complexes |
 | Pasaje | Passageways / alleys |
-| Edificio | Buildings / apartment blocks |
 | Domicilio | Individual residences |
+| Edificio | Buildings / apartment blocks |
 | Calle | Street-level requests |
-| Otro | Other / unclassified |
+| Otro | Other / unclassified (includes cités, housing complexes) |
 
 ## How to Run
 

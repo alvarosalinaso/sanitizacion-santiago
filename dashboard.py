@@ -1,12 +1,12 @@
 """Dash Dashboard: Sanitización Comuna de Santiago — Mondrian / De Stijl."""
 
 from pathlib import Path
+from typing import Any
 
 import dash
-import os
 import pandas as pd
 import plotly.express as px
-from dash import Input, Output, State, callback, dcc, html
+from dash import Input, Output, callback, dcc, html
 
 app = dash.Dash(
     __name__,
@@ -22,7 +22,7 @@ BLACK = "#000000"
 WHITE = "#ffffff"
 GRAY = "#e0e0e0"
 
-TYPE_COLORS = {
+TYPE_COLORS: dict[str, str] = {
     "Cité": RED, "Pasaje": BLUE, "Edificio": YELLOW,
     "Domicilio": RED, "Calle": BLUE, "Otro": YELLOW,
 }
@@ -31,23 +31,50 @@ DATA_PATH = Path(__file__).parent / "data" / "raw" / "sanitization_points.csv"
 
 MONDRIAN_BORDER = f"5px solid {BLACK}"
 
-BLOCK_STYLE = {
+BLOCK_STYLE: dict[str, Any] = {
     "border": MONDRIAN_BORDER,
     "padding": "0",
 }
 
-CARD_BODY = {
+CARD_BODY: dict[str, Any] = {
     "padding": "20px",
 }
 
 
-def load_data():
-    if DATA_PATH.exists():
-        return pd.read_csv(DATA_PATH)
-    return pd.DataFrame()
+def load_data() -> pd.DataFrame:
+    """Load and validate sanitization points data."""
+    if not DATA_PATH.exists():
+        return pd.DataFrame()
+    df = pd.read_csv(DATA_PATH)
+    # Data validation
+    required_cols = {"name", "description", "lat", "lon", "type"}
+    missing = required_cols - set(df.columns)
+    if missing:
+        print(f"[WARN] Missing columns: {missing}")
+        return pd.DataFrame()
+    # Validate lat/lon bounds for Santiago
+    lat_ok = df["lat"].between(-33.55, -33.35).all()
+    lon_ok = df["lon"].between(-70.8, -70.55).all()
+    if not lat_ok or not lon_ok:
+        print("[WARN] Coordinates outside Santiago bounds")
+    # Validate types
+    valid_types = {"Pasaje", "Edificio", "Domicilio", "Calle", "Otro"}
+    invalid = set(df["type"].unique()) - valid_types
+    if invalid:
+        print(f"[WARN] Invalid types found: {invalid}")
+    return df
 
 
-DATA = load_data()
+# Lazy load - DATA is loaded on first access via get_data()
+_DATA: pd.DataFrame | None = None
+
+
+def get_data() -> pd.DataFrame:
+    """Get data with lazy loading."""
+    global _DATA
+    if _DATA is None:
+        _DATA = load_data()
+    return _DATA
 
 
 def stat_block(value, label, bg_color):
@@ -127,8 +154,8 @@ app.layout = html.Div(
                 }),
                 dcc.Checklist(
                     id="filter-type",
-                    options=[{"label": f" {t}", "value": t} for t in DATA["type"].unique()] if not DATA.empty else [],
-                    value=DATA["type"].unique().tolist() if not DATA.empty else [],
+                    options=[{"label": f" {t}", "value": t} for t in get_data()["type"].unique()] if not get_data().empty else [],
+                    value=get_data()["type"].unique().tolist() if not get_data().empty else [],
                     inline=True,
                     style={"color": BLACK, "marginTop": "6px"},
                     inputStyle={"marginRight": "4px", "accentColor": RED},
@@ -144,7 +171,7 @@ app.layout = html.Div(
                 }),
                 dcc.Dropdown(
                     id="filter-name",
-                    options=[{"label": n, "value": n} for n in DATA["name"].tolist()] if not DATA.empty else [],
+                    options=[{"label": n, "value": n} for n in get_data()["name"].tolist()] if not get_data().empty else [],
                     multi=True,
                     placeholder="Seleccionar...",
                     style={"backgroundColor": WHITE},
@@ -199,9 +226,10 @@ app.layout = html.Div(
 
 
 def _filter_data(types, names):
-    if DATA.empty:
-        return DATA
-    df = DATA[DATA["type"].isin(types)]
+    data = get_data()
+    if data.empty:
+        return data
+    df = data[data["type"].isin(types)]
     if names:
         df = df[df["name"].isin(names)]
     return df
@@ -214,7 +242,7 @@ def _filter_data(types, names):
     Input("filter-name", "value"),
 )
 def render_tab(tab, types, names):
-    if DATA.empty:
+    if get_data().empty:
         return _error_block("No hay datos disponibles")
     df = _filter_data(types or [], names or [])
     if df.empty:
@@ -308,7 +336,9 @@ def dist_tab(df):
     )
 
     df_copy = df.copy()
-    df_copy["street"] = df_copy["name"].str.extract(r"^([A-Za-záéíóúñü\s]+)")
+    # Regex mejorada: captura nombres de calles que pueden empezar con números (ej. "10 de Julio")
+    # Incluye: letras, números, espacios, y caracteres comunes en nombres de calles chilenos
+    df_copy["street"] = df_copy["name"].str.extract(r"^([A-Za-z0-9áéíóúñü\s\.\-]+)")
     df_copy["street"] = df_copy["street"].str.strip()
     street_counts = df_copy["street"].dropna().value_counts().head(15)
     fig_streets = px.bar(
@@ -319,8 +349,8 @@ def dist_tab(df):
     fig_streets.update_layout(
         template="plotly_white", paper_bgcolor=WHITE, plot_bgcolor=WHITE,
         height=500, showlegend=False,
-        yaxis={"categoryorder": "total ascending"},
-        xaxis=dict(showgrid=False), yaxis2=dict(showgrid=False),
+yaxis={"categoryorder": "total ascending"},
+    xaxis=dict(showgrid=False),
     )
 
     return html.Div(style={"display": "flex", "gap": "0", "flexWrap": "wrap"}, children=[
