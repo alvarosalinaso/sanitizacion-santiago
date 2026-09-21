@@ -312,11 +312,11 @@ def _error_block(msg):
 
 def map_tab(df):
     total = len(df)
-    fig = px.scatter_mapbox(
+    fig = px.scatter_map(
         df, lat="lat", lon="lon", color="type",
         hover_name="name", hover_data=["description", "type"],
         center={"lat": -33.45, "lon": -70.66}, zoom=12,
-        mapbox_style="carto-positron",
+        map_style="carto-positron",
         color_discrete_map=TYPE_COLORS,
     )
     fig.update_traces(
