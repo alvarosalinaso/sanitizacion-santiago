@@ -445,8 +445,32 @@ yaxis={"categoryorder": "total ascending"},
                 dcc.Graph(figure=fig_streets),
             ]),
         ]),
+        html.Div(style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px", "backgroundColor": YELLOW}, children=[
+            html.Div(CARD_BODY, children=[
+                mondrian_title("Nube de Puntos — latitud por tipo"),
+                dcc.Graph(figure=_strip_fig(df)),
+            ]),
         ]),
     ])
+
+
+def _strip_fig(df):
+    fig = px.strip(
+        df, x="type", y="lat", color="type",
+        title="Dot-density: cada punto es una solicitud",
+        color_discrete_map=TYPE_COLORS,
+        hover_name="name",
+    )
+    fig.update_traces(
+        marker=dict(size=10, line=dict(width=2, color=BLACK)),
+        hovertemplate="<b>%{hovertext}</b><br>Tipo: %{x}<br>Lat: %{y:.4f}°<extra></extra>",
+    )
+    fig.update_layout(
+        template="plotly_white", paper_bgcolor=YELLOW, plot_bgcolor=WHITE,
+        height=500, showlegend=False,
+        xaxis=dict(showgrid=False), yaxis=dict(showgrid=False, title="Latitud"),
+    )
+    return fig
 
 
 @callback(
