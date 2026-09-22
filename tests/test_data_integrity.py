@@ -1,8 +1,8 @@
 """Tests for sanitizacion-santiago dashboard."""
 
-import pandas as pd
-import pytest
 from pathlib import Path
+
+import pandas as pd
 
 # The dashboard doesn't have a src/ module, tests are for data integrity
 # which already exists in test_dashboard.py
@@ -10,13 +10,17 @@ from pathlib import Path
 
 def test_dashboard_data_exists():
     """Test that raw data file exists."""
-    data_path = Path(__file__).parent.parent / "data" / "raw" / "sanitization_points.csv"
+    data_path = (
+        Path(__file__).parent.parent / "data" / "raw" / "sanitization_points.csv"
+    )
     assert data_path.exists()
 
 
 def test_dashboard_data_structure():
     """Test that data has expected columns and types."""
-    data_path = Path(__file__).parent.parent / "data" / "raw" / "sanitization_points.csv"
+    data_path = (
+        Path(__file__).parent.parent / "data" / "raw" / "sanitization_points.csv"
+    )
     df = pd.read_csv(data_path)
 
     assert "name" in df.columns
@@ -28,7 +32,9 @@ def test_dashboard_data_structure():
 
 def test_dashboard_lat_bounds():
     """Test latitude is within Santiago bounds."""
-    data_path = Path(__file__).parent.parent / "data" / "raw" / "sanitization_points.csv"
+    data_path = (
+        Path(__file__).parent.parent / "data" / "raw" / "sanitization_points.csv"
+    )
     df = pd.read_csv(data_path)
 
     # Santiago approximate bounds
@@ -37,7 +43,9 @@ def test_dashboard_lat_bounds():
 
 def test_dashboard_lon_bounds():
     """Test longitude is within Santiago bounds."""
-    data_path = Path(__file__).parent.parent / "data" / "raw" / "sanitization_points.csv"
+    data_path = (
+        Path(__file__).parent.parent / "data" / "raw" / "sanitization_points.csv"
+    )
     df = pd.read_csv(data_path)
 
     # Santiago approximate bounds
@@ -46,7 +54,9 @@ def test_dashboard_lon_bounds():
 
 def test_dashboard_types_valid():
     """Test type values are from expected set."""
-    data_path = Path(__file__).parent.parent / "data" / "raw" / "sanitization_points.csv"
+    data_path = (
+        Path(__file__).parent.parent / "data" / "raw" / "sanitization_points.csv"
+    )
     df = pd.read_csv(data_path)
 
     expected_types = {"Pasaje", "Edificio", "Domicilio", "Calle", "Otro"}
@@ -55,7 +65,9 @@ def test_dashboard_types_valid():
 
 def test_dashboard_no_nulls():
     """Test no null values in critical columns."""
-    data_path = Path(__file__).parent.parent / "data" / "raw" / "sanitization_points.csv"
+    data_path = (
+        Path(__file__).parent.parent / "data" / "raw" / "sanitization_points.csv"
+    )
     df = pd.read_csv(data_path)
 
     assert df["name"].notna().all()
@@ -67,18 +79,21 @@ def test_dashboard_no_nulls():
 def test_dashboard_street_extraction_regex():
     """Test that street extraction regex handles '10 de Julio' format."""
     import re
+
     # Updated regex should handle numbers at start of street name
     street_pattern = r"^([A-Za-z0-9áéíóúñü\s\.\-]+)"
-    
+
     test_cases = [
         ("10 de Julio 462", "10 de Julio"),
         ("San Francisco 838", "San Francisco"),
         ("Av. España 170", "Av. España"),
         ("Pasaje Emilio", "Pasaje Emilio"),
     ]
-    
+
     for name, expected_street in test_cases:
         match = re.match(street_pattern, name)
         assert match is not None, f"No match for: {name}"
         extracted = match.group(1).strip()
-        assert expected_street.lower() in extracted.lower(), f"Expected '{expected_street}' in '{extracted}' for '{name}'"
+        assert expected_street.lower() in extracted.lower(), (
+            f"Expected '{expected_street}' in '{extracted}' for '{name}'"
+        )

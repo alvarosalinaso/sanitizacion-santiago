@@ -1,10 +1,13 @@
 """Tests for sanitization_points.csv data integrity."""
 
-import pandas as pd
-import pytest
 from pathlib import Path
 
-DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "raw" / "sanitization_points.csv"
+import pandas as pd
+import pytest
+
+DATA_PATH = (
+    Path(__file__).resolve().parent.parent / "data" / "raw" / "sanitization_points.csv"
+)
 
 EXPECTED_COLUMNS = ["name", "description", "lat", "lon", "type"]
 EXPECTED_TYPES = {"Pasaje", "Edificio", "Domicilio", "Calle", "Otro"}

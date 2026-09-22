@@ -1,9 +1,8 @@
 """Dash Dashboard: Sanitización Comuna de Santiago — Data-Art Poster Edition."""
 
+import os
 from pathlib import Path
 from typing import Any
-
-import os
 
 import dash
 import pandas as pd
@@ -33,8 +32,12 @@ GREEN = "#34d399"
 CYAN = "#22d3ee"
 
 TYPE_COLORS: dict[str, str] = {
-    "Cité": RED, "Pasaje": BLUE, "Edificio": YELLOW,
-    "Domicilio": CYAN, "Calle": GREEN, "Otro": "#a78bfa",
+    "Cité": RED,
+    "Pasaje": BLUE,
+    "Edificio": YELLOW,
+    "Domicilio": CYAN,
+    "Calle": GREEN,
+    "Otro": "#a78bfa",
 }
 
 DATA_PATH = Path(__file__).parent / "data" / "raw" / "sanitization_points.csv"
@@ -55,10 +58,18 @@ CHART_TEMPLATE = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
     font=dict(family="Inter,Segoe UI,sans-serif", color="#e8edf2", size=13),
-    xaxis=dict(gridcolor="rgba(255,255,255,0.06)", zerolinecolor="rgba(255,255,255,0.12)",
-               title=dict(font=dict(size=13)), tickfont=dict(family="JetBrains Mono,monospace", size=12)),
-    yaxis=dict(gridcolor="rgba(255,255,255,0.06)", zerolinecolor="rgba(255,255,255,0.12)",
-               title=dict(font=dict(size=13)), tickfont=dict(family="JetBrains Mono,monospace", size=12)),
+    xaxis=dict(
+        gridcolor="rgba(255,255,255,0.06)",
+        zerolinecolor="rgba(255,255,255,0.12)",
+        title=dict(font=dict(size=13)),
+        tickfont=dict(family="JetBrains Mono,monospace", size=12),
+    ),
+    yaxis=dict(
+        gridcolor="rgba(255,255,255,0.06)",
+        zerolinecolor="rgba(255,255,255,0.12)",
+        title=dict(font=dict(size=13)),
+        tickfont=dict(family="JetBrains Mono,monospace", size=12),
+    ),
     legend=dict(font=dict(size=12), bgcolor="rgba(0,0,0,0)"),
 )
 
@@ -67,8 +78,12 @@ DATA_CANVAS_SVG = (
     "%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='110' viewBox='0 0 1200 110'%3E"
     "%3Crect width='1200' height='110' fill='%230a0e14'/%3E"
     "%3Cg fill='%2322d3ee' opacity='0.16'%3E"
-    + "".join(f"%3Ccircle cx='{x}' cy='{y}' r='2'/%3E" for x in range(30, 1200, 60) for y in range(20, 110, 30)) +
-    "%3C/g%3E%3Cg fill='none' stroke='%23f472b6' stroke-width='2' opacity='0.7'%3E"
+    + "".join(
+        f"%3Ccircle cx='{x}' cy='{y}' r='2'/%3E"
+        for x in range(30, 1200, 60)
+        for y in range(20, 110, 30)
+    )
+    + "%3C/g%3E%3Cg fill='none' stroke='%23f472b6' stroke-width='2' opacity='0.7'%3E"
     "%3Cpath d='M0,85 Q200,40 400,65 T800,35 T1200,60'/%3E%3C/g%3E"
     "%3Cg fill='%23fbbf24' opacity='0.9'%3E"
     "%3Ccircle cx='150' cy='50' r='5'/%3E%3Ccircle cx='450' cy='75' r='4'/%3E%3Ccircle cx='750' cy='40' r='6'/%3E%3Ccircle cx='1020' cy='65' r='5'/%3E"
@@ -121,68 +136,124 @@ def stat_block(value, label, bg_color):
             "minHeight": "90px",
         },
         children=[
-            html.Div(str(value), style={
-                "fontSize": "2rem", "fontWeight": "800",
-                "color": TEXT,
-                "fontFamily": FONT_DATA,
-            }),
-            html.Div(label, style={
-                "fontSize": "0.75rem", "fontWeight": "600",
-                "letterSpacing": "0.08em",
-                "color": MUTED,
-                "fontFamily": FONT_UI,
-                "marginTop": "2px",
-            }),
+            html.Div(
+                str(value),
+                style={
+                    "fontSize": "2rem",
+                    "fontWeight": "800",
+                    "color": TEXT,
+                    "fontFamily": FONT_DATA,
+                },
+            ),
+            html.Div(
+                label,
+                style={
+                    "fontSize": "0.75rem",
+                    "fontWeight": "600",
+                    "letterSpacing": "0.08em",
+                    "color": MUTED,
+                    "fontFamily": FONT_UI,
+                    "marginTop": "2px",
+                },
+            ),
         ],
     )
 
 
 def mondrian_title(text):
-    return html.Div(children=[
-        html.H3(text, style={
-            "fontSize": "1.05rem", "fontWeight": "700",
-            "margin": "0 0 4px 0",
-            "color": TEXT, "fontFamily": FONT_UI,
-        }),
-        html.Div("insights · metodología · decisión", style={
-            "color": MUTED, "fontSize": "0.75rem",
-            "fontFamily": FONT_DATA, "marginBottom": "12px",
-        }),
-    ])
+    return html.Div(
+        children=[
+            html.H3(
+                text,
+                style={
+                    "fontSize": "1.05rem",
+                    "fontWeight": "700",
+                    "margin": "0 0 4px 0",
+                    "color": TEXT,
+                    "fontFamily": FONT_UI,
+                },
+            ),
+            html.Div(
+                "insights · metodología · decisión",
+                style={
+                    "color": MUTED,
+                    "fontSize": "0.75rem",
+                    "fontFamily": FONT_DATA,
+                    "marginBottom": "12px",
+                },
+            ),
+        ]
+    )
 
 
 def sparkline(values, color=RED):
     if not values or len(values) < 2:
         return html.Div(style={"height": "34px"})
     fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        y=list(values), mode="lines",
-        line={"color": color, "width": 2.5, "shape": "spline"},
-        fill="tozeroy", hoverinfo="skip", showlegend=False,
-    ))
+    fig.add_trace(
+        go.Scatter(
+            y=list(values),
+            mode="lines",
+            line={"color": color, "width": 2.5, "shape": "spline"},
+            fill="tozeroy",
+            hoverinfo="skip",
+            showlegend=False,
+        )
+    )
     fig.update_layout(
         margin={"t": 0, "b": 0, "l": 0, "r": 0},
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        xaxis={"visible": False}, yaxis={"visible": False}, height=34,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        xaxis={"visible": False},
+        yaxis={"visible": False},
+        height=34,
     )
-    return dcc.Graph(figure=fig, config={"displayModeBar": False}, style={"height": "34px"})
+    return dcc.Graph(
+        figure=fig, config={"displayModeBar": False}, style={"height": "34px"}
+    )
 
 
 def insight_card(question, answer, accent=RED):
     return html.Div(
-        style={**BLOCK_STYLE, "borderLeft": f"3px solid {accent}", "padding": "14px 16px", "marginBottom": "12px"},
+        style={
+            **BLOCK_STYLE,
+            "borderLeft": f"3px solid {accent}",
+            "padding": "14px 16px",
+            "marginBottom": "12px",
+        },
         children=[
-            html.Div(question, style={"fontWeight": "700", "fontSize": "0.75rem", "letterSpacing": "0.08em", "textTransform": "uppercase", "color": accent, "fontFamily": FONT_UI}),
-            html.Div(answer, style={"marginTop": "4px", "color": TEXT, "lineHeight": "1.55", "fontSize": "0.92rem"}),
+            html.Div(
+                question,
+                style={
+                    "fontWeight": "700",
+                    "fontSize": "0.75rem",
+                    "letterSpacing": "0.08em",
+                    "textTransform": "uppercase",
+                    "color": accent,
+                    "fontFamily": FONT_UI,
+                },
+            ),
+            html.Div(
+                answer,
+                style={
+                    "marginTop": "4px",
+                    "color": TEXT,
+                    "lineHeight": "1.55",
+                    "fontSize": "0.92rem",
+                },
+            ),
         ],
     )
 
 
 app.layout = html.Div(
     style={
-        "backgroundColor": BG, "minHeight": "100vh",
-        "fontFamily": FONT_UI, "color": TEXT,
-        "margin": "0", "padding": "0",
+        "backgroundColor": BG,
+        "minHeight": "100vh",
+        "fontFamily": FONT_UI,
+        "color": TEXT,
+        "margin": "0",
+        "padding": "0",
     },
     children=[
         html.Div(
@@ -194,107 +265,232 @@ app.layout = html.Div(
             children=[
                 html.Div(
                     "PORTFOLIO · DATA ART",
-                    style={"display": "inlineBlock", "color": CYAN, "fontWeight": "700", "letterSpacing": "0.28em", "fontSize": "0.7rem", "fontFamily": FONT_DATA, "padding": "6px 0", "marginBottom": "10px", "borderBottom": "1px solid rgba(34,211,238,0.4)"},
+                    style={
+                        "display": "inlineBlock",
+                        "color": CYAN,
+                        "fontWeight": "700",
+                        "letterSpacing": "0.28em",
+                        "fontSize": "0.7rem",
+                        "fontFamily": FONT_DATA,
+                        "padding": "6px 0",
+                        "marginBottom": "10px",
+                        "borderBottom": "1px solid rgba(34,211,238,0.4)",
+                    },
                 ),
-                html.H1("Sanitización Santiago", style={
-                    "fontSize": "2.2rem", "fontWeight": "800", "color": TEXT,
-                    "margin": "0", "letterSpacing": "-0.01em",
-                }),
-                html.P("Mapa de solicitudes de sanitización — Datos georeferenciados", style={
-                    "color": MUTED, "marginTop": "8px", "fontSize": "0.95rem",
-                    "fontFamily": FONT_DATA,
-                }),
+                html.H1(
+                    "Sanitización Santiago",
+                    style={
+                        "fontSize": "2.2rem",
+                        "fontWeight": "800",
+                        "color": TEXT,
+                        "margin": "0",
+                        "letterSpacing": "-0.01em",
+                    },
+                ),
+                html.P(
+                    "Mapa de solicitudes de sanitización — Datos georeferenciados",
+                    style={
+                        "color": MUTED,
+                        "marginTop": "8px",
+                        "fontSize": "0.95rem",
+                        "fontFamily": FONT_DATA,
+                    },
+                ),
             ],
         ),
-        html.Div(style={
-            "backgroundImage": f"url(\"{DATA_CANVAS_SVG}\")",
-            "backgroundSize": "cover", "backgroundPosition": "center",
-            "height": "110px", "borderBottom": "1px solid rgba(255,255,255,0.08)",
-        }),
-        html.Div(style={
-            "display": "flex", "gap": "14px", "padding": "18px 20px",
-            "flexWrap": "wrap", "borderBottom": "1px solid rgba(255,255,255,0.08)",
-            "maxWidth": "1200px", "margin": "0 auto",
-        }, children=[
-            html.Div(style={
-                "flex": "3", "minWidth": "250px",
-                "padding": "16px 18px", "backgroundColor": CARD,
-                "border": "1px solid rgba(255,255,255,0.08)", "borderRadius": "12px",
-            }, children=[
-                html.Label("Filtrar por tipo", style={
-                    "color": MUTED, "fontSize": "0.75rem",
-                    "letterSpacing": "0.08em", "fontWeight": "700",
-                }),
-                dcc.Checklist(
-                    id="filter-type",
-                    options=[{"label": f" {t}", "value": t} for t in get_data()["type"].unique()] if not get_data().empty else [],
-                    value=get_data()["type"].unique().tolist() if not get_data().empty else [],
-                    inline=True,
-                    style={"color": TEXT, "marginTop": "6px"},
-                    inputStyle={"marginRight": "4px", "accentColor": CYAN},
-                ),
-            ]),
-            html.Div(style={
-                "flex": "2", "minWidth": "200px", "padding": "16px 18px",
-                "backgroundColor": CARD,
-                "border": "1px solid rgba(255,255,255,0.08)", "borderRadius": "12px",
-            }, children=[
-                html.Label("Buscar por nombre", style={
-                    "color": MUTED, "fontSize": "0.75rem",
-                    "letterSpacing": "0.08em", "fontWeight": "700",
-                }),
-                dcc.Dropdown(
-                    id="filter-name",
-                    options=[{"label": n, "value": n} for n in get_data()["name"].tolist()] if not get_data().empty else [],
-                    multi=True,
-                    placeholder="Seleccionar...",
-                    style={"backgroundColor": BG, "color": TEXT},
-                ),
-            ]),
-        ]),
-        dcc.Tabs(
-            id="tabs", value="map",
-            style={"backgroundColor": "transparent", "borderBottom": "1px solid rgba(255,255,255,0.08)"},
+        html.Div(
+            style={
+                "backgroundImage": f'url("{DATA_CANVAS_SVG}")',
+                "backgroundSize": "cover",
+                "backgroundPosition": "center",
+                "height": "110px",
+                "borderBottom": "1px solid rgba(255,255,255,0.08)",
+            }
+        ),
+        html.Div(
+            style={
+                "display": "flex",
+                "gap": "14px",
+                "padding": "18px 20px",
+                "flexWrap": "wrap",
+                "borderBottom": "1px solid rgba(255,255,255,0.08)",
+                "maxWidth": "1200px",
+                "margin": "0 auto",
+            },
             children=[
-                dcc.Tab(label="Mapa", value="map", style={
-                    "backgroundColor": "transparent", "color": MUTED, "border": "none",
-                    "borderBottom": "2px solid transparent",
-                    "fontWeight": "600", "fontSize": "0.85rem", "padding": "14px 20px",
-                }, selected_style={
-                    "backgroundColor": "transparent", "color": TEXT, "border": "none",
-                    "borderBottom": "2px solid #22d3ee",
-                    "fontWeight": "700", "fontSize": "0.85rem", "padding": "14px 20px",
-                }),
-                dcc.Tab(label="Distribución", value="dist", style={
-                    "backgroundColor": "transparent", "color": MUTED, "border": "none",
-                    "borderBottom": "2px solid transparent",
-                    "fontWeight": "600", "fontSize": "0.85rem", "padding": "14px 20px",
-                }, selected_style={
-                    "backgroundColor": "transparent", "color": TEXT, "border": "none",
-                    "borderBottom": "2px solid #22d3ee",
-                    "fontWeight": "700", "fontSize": "0.85rem", "padding": "14px 20px",
-                }),
-                dcc.Tab(label="Análisis", value="analysis", style={
-                    "backgroundColor": "transparent", "color": MUTED, "border": "none",
-                    "borderBottom": "2px solid transparent",
-                    "fontWeight": "600", "fontSize": "0.85rem", "padding": "14px 20px",
-                }, selected_style={
-                    "backgroundColor": "transparent", "color": TEXT, "border": "none",
-                    "borderBottom": "2px solid #22d3ee",
-                    "fontWeight": "700", "fontSize": "0.85rem", "padding": "14px 20px",
-                }),
-                dcc.Tab(label="Datos", value="data", style={
-                    "backgroundColor": "transparent", "color": MUTED, "border": "none",
-                    "borderBottom": "2px solid transparent",
-                    "fontWeight": "600", "fontSize": "0.85rem", "padding": "14px 20px",
-                }, selected_style={
-                    "backgroundColor": "transparent", "color": TEXT, "border": "none",
-                    "borderBottom": "2px solid #22d3ee",
-                    "fontWeight": "700", "fontSize": "0.85rem", "padding": "14px 20px",
-                }),
+                html.Div(
+                    style={
+                        "flex": "3",
+                        "minWidth": "250px",
+                        "padding": "16px 18px",
+                        "backgroundColor": CARD,
+                        "border": "1px solid rgba(255,255,255,0.08)",
+                        "borderRadius": "12px",
+                    },
+                    children=[
+                        html.Label(
+                            "Filtrar por tipo",
+                            style={
+                                "color": MUTED,
+                                "fontSize": "0.75rem",
+                                "letterSpacing": "0.08em",
+                                "fontWeight": "700",
+                            },
+                        ),
+                        dcc.Checklist(
+                            id="filter-type",
+                            options=[
+                                {"label": f" {t}", "value": t}
+                                for t in get_data()["type"].unique()
+                            ]
+                            if not get_data().empty
+                            else [],
+                            value=get_data()["type"].unique().tolist()
+                            if not get_data().empty
+                            else [],
+                            inline=True,
+                            style={"color": TEXT, "marginTop": "6px"},
+                            inputStyle={"marginRight": "4px", "accentColor": CYAN},
+                        ),
+                    ],
+                ),
+                html.Div(
+                    style={
+                        "flex": "2",
+                        "minWidth": "200px",
+                        "padding": "16px 18px",
+                        "backgroundColor": CARD,
+                        "border": "1px solid rgba(255,255,255,0.08)",
+                        "borderRadius": "12px",
+                    },
+                    children=[
+                        html.Label(
+                            "Buscar por nombre",
+                            style={
+                                "color": MUTED,
+                                "fontSize": "0.75rem",
+                                "letterSpacing": "0.08em",
+                                "fontWeight": "700",
+                            },
+                        ),
+                        dcc.Dropdown(
+                            id="filter-name",
+                            options=[
+                                {"label": n, "value": n}
+                                for n in get_data()["name"].tolist()
+                            ]
+                            if not get_data().empty
+                            else [],
+                            multi=True,
+                            placeholder="Seleccionar...",
+                            style={"backgroundColor": BG, "color": TEXT},
+                        ),
+                    ],
+                ),
             ],
         ),
-        html.Div(id="tab-content", style={"maxWidth": "1200px", "margin": "0 auto", "padding": "24px 20px"}),
+        dcc.Tabs(
+            id="tabs",
+            value="map",
+            style={
+                "backgroundColor": "transparent",
+                "borderBottom": "1px solid rgba(255,255,255,0.08)",
+            },
+            children=[
+                dcc.Tab(
+                    label="Mapa",
+                    value="map",
+                    style={
+                        "backgroundColor": "transparent",
+                        "color": MUTED,
+                        "border": "none",
+                        "borderBottom": "2px solid transparent",
+                        "fontWeight": "600",
+                        "fontSize": "0.85rem",
+                        "padding": "14px 20px",
+                    },
+                    selected_style={
+                        "backgroundColor": "transparent",
+                        "color": TEXT,
+                        "border": "none",
+                        "borderBottom": "2px solid #22d3ee",
+                        "fontWeight": "700",
+                        "fontSize": "0.85rem",
+                        "padding": "14px 20px",
+                    },
+                ),
+                dcc.Tab(
+                    label="Distribución",
+                    value="dist",
+                    style={
+                        "backgroundColor": "transparent",
+                        "color": MUTED,
+                        "border": "none",
+                        "borderBottom": "2px solid transparent",
+                        "fontWeight": "600",
+                        "fontSize": "0.85rem",
+                        "padding": "14px 20px",
+                    },
+                    selected_style={
+                        "backgroundColor": "transparent",
+                        "color": TEXT,
+                        "border": "none",
+                        "borderBottom": "2px solid #22d3ee",
+                        "fontWeight": "700",
+                        "fontSize": "0.85rem",
+                        "padding": "14px 20px",
+                    },
+                ),
+                dcc.Tab(
+                    label="Análisis",
+                    value="analysis",
+                    style={
+                        "backgroundColor": "transparent",
+                        "color": MUTED,
+                        "border": "none",
+                        "borderBottom": "2px solid transparent",
+                        "fontWeight": "600",
+                        "fontSize": "0.85rem",
+                        "padding": "14px 20px",
+                    },
+                    selected_style={
+                        "backgroundColor": "transparent",
+                        "color": TEXT,
+                        "border": "none",
+                        "borderBottom": "2px solid #22d3ee",
+                        "fontWeight": "700",
+                        "fontSize": "0.85rem",
+                        "padding": "14px 20px",
+                    },
+                ),
+                dcc.Tab(
+                    label="Datos",
+                    value="data",
+                    style={
+                        "backgroundColor": "transparent",
+                        "color": MUTED,
+                        "border": "none",
+                        "borderBottom": "2px solid transparent",
+                        "fontWeight": "600",
+                        "fontSize": "0.85rem",
+                        "padding": "14px 20px",
+                    },
+                    selected_style={
+                        "backgroundColor": "transparent",
+                        "color": TEXT,
+                        "border": "none",
+                        "borderBottom": "2px solid #22d3ee",
+                        "fontWeight": "700",
+                        "fontSize": "0.85rem",
+                        "padding": "14px 20px",
+                    },
+                ),
+            ],
+        ),
+        html.Div(
+            id="tab-content",
+            style={"maxWidth": "1200px", "margin": "0 auto", "padding": "24px 20px"},
+        ),
     ],
 )
 
@@ -321,26 +517,48 @@ def render_tab(tab, types, names):
     df = _filter_data(types or [], names or [])
     if df.empty:
         return _error_block("No hay puntos que coincidan con los filtros")
-    funcs = {"map": map_tab, "dist": dist_tab, "analysis": analysis_tab, "data": data_tab}
+    funcs = {
+        "map": map_tab,
+        "dist": dist_tab,
+        "analysis": analysis_tab,
+        "data": data_tab,
+    }
     return funcs.get(tab, map_tab)(df)
 
 
 def _error_block(msg):
-    return html.Div(style={
-        **BLOCK_STYLE, "backgroundColor": "#2a0e18",
-        "padding": "60px 20px", "textAlign": "center",
-    }, children=[
-        html.P(msg, style={"color": TEXT, "fontSize": "1rem",
-                           "letterSpacing": "0.05em", "margin": "0"}),
-    ])
+    return html.Div(
+        style={
+            **BLOCK_STYLE,
+            "backgroundColor": "#2a0e18",
+            "padding": "60px 20px",
+            "textAlign": "center",
+        },
+        children=[
+            html.P(
+                msg,
+                style={
+                    "color": TEXT,
+                    "fontSize": "1rem",
+                    "letterSpacing": "0.05em",
+                    "margin": "0",
+                },
+            ),
+        ],
+    )
 
 
 def map_tab(df):
     total = len(df)
     fig = px.scatter_map(
-        df, lat="lat", lon="lon", color="type",
-        hover_name="name", hover_data=["description", "type"],
-        center={"lat": -33.45, "lon": -70.66}, zoom=12,
+        df,
+        lat="lat",
+        lon="lon",
+        color="type",
+        hover_name="name",
+        hover_data=["description", "type"],
+        center={"lat": -33.45, "lon": -70.66},
+        zoom=12,
         map_style="carto-darkmatter",
         color_discrete_map=TYPE_COLORS,
     )
@@ -348,78 +566,170 @@ def map_tab(df):
         hovertemplate="<b>%{hovertext}</b><br>%{customdata[0]}<br>Tipo: %{customdata[1]}<br>%{lat:.4f}°, %{lon:.4f}°<extra></extra>",
     )
     fig.update_layout(
-        **CHART_TEMPLATE, height=600, margin=dict(t=10, b=10, l=10, r=10),
+        **CHART_TEMPLATE,
+        height=600,
+        margin=dict(t=10, b=10, l=10, r=10),
     )
-    fig.update_layout(legend=dict(bgcolor="rgba(10,14,20,0.8)", font=dict(color=TEXT, size=11)))
+    fig.update_layout(
+        legend=dict(bgcolor="rgba(10,14,20,0.8)", font=dict(color=TEXT, size=11))
+    )
     by_type = df["type"].value_counts()
     top_type = by_type.index[0] if len(by_type) else "—"
     count_block = stat_block(total, "puntos", RED)
-    insights = html.Div(style={**BLOCK_STYLE, "padding": "16px 18px", "marginBottom": "16px"}, children=[
-        mondrian_title("Key Insights"),
-        insight_card("¿Problema?", f"{total} solicitudes dispersas sin priorización visible por tipo ni calle.", RED),
-        insight_card("¿Metodología?", f"Georreferenciación validada + top tipo '{top_type}' ({by_type.iloc[0] if len(by_type) else 0} casos) para focalizar cuadrillas.", BLUE),
-        insight_card("¿Decisión?", "Asignar rutas por calle frecuente y tipo dominante; clic en barras de Distribución para filtrar.", GREEN),
-        sparkline(by_type.values.tolist(), RED),
-    ])
+    insights = html.Div(
+        style={**BLOCK_STYLE, "padding": "16px 18px", "marginBottom": "16px"},
+        children=[
+            mondrian_title("Key Insights"),
+            insight_card(
+                "¿Problema?",
+                f"{total} solicitudes dispersas sin priorización visible por tipo ni calle.",
+                RED,
+            ),
+            insight_card(
+                "¿Metodología?",
+                f"Georreferenciación validada + top tipo '{top_type}' ({by_type.iloc[0] if len(by_type) else 0} casos) para focalizar cuadrillas.",
+                BLUE,
+            ),
+            insight_card(
+                "¿Decisión?",
+                "Asignar rutas por calle frecuente y tipo dominante; clic en barras de Distribución para filtrar.",
+                GREEN,
+            ),
+            sparkline(by_type.values.tolist(), RED),
+        ],
+    )
     type_codes = {t: i for i, t in enumerate(sorted(df["type"].unique()))}
     fig3d = go.Figure()
     for t in sorted(df["type"].unique()):
         tdf = df[df["type"] == t]
-        fig3d.add_trace(go.Scatter3d(
-            x=tdf["lon"], y=tdf["lat"], z=[type_codes[t]] * len(tdf),
-            mode="markers", name=t,
-            marker=dict(size=5, opacity=0.85, color=TYPE_COLORS.get(t, RED)),
-            hovertemplate=f"<b>Tipo: {t}</b><br>Lon: %{{x:.4f}}<br>Lat: %{{y:.4f}}<extra></extra>",
-        ))
+        fig3d.add_trace(
+            go.Scatter3d(
+                x=tdf["lon"],
+                y=tdf["lat"],
+                z=[type_codes[t]] * len(tdf),
+                mode="markers",
+                name=t,
+                marker=dict(size=5, opacity=0.85, color=TYPE_COLORS.get(t, RED)),
+                hovertemplate=f"<b>Tipo: {t}</b><br>Lon: %{{x:.4f}}<br>Lat: %{{y:.4f}}<extra></extra>",
+            )
+        )
     fig3d.update_layout(
-        **CHART_TEMPLATE, height=550, margin=dict(t=10, b=10, l=10, r=10),
+        **CHART_TEMPLATE,
+        height=550,
+        margin=dict(t=10, b=10, l=10, r=10),
         title="Torre 3D por tipo — arrastra para rotar",
         scene=dict(
-            xaxis_title="Longitud", yaxis_title="Latitud", zaxis_title="Tipo",
-            xaxis=dict(backgroundcolor="rgba(0,0,0,0)", gridcolor="rgba(255,255,255,0.06)"),
-            yaxis=dict(backgroundcolor="rgba(0,0,0,0)", gridcolor="rgba(255,255,255,0.06)"),
-            zaxis=dict(backgroundcolor="rgba(0,0,0,0)", gridcolor="rgba(255,255,255,0.06)",
-                       tickvals=list(type_codes.values()), ticktext=list(type_codes.keys())),
+            xaxis_title="Longitud",
+            yaxis_title="Latitud",
+            zaxis_title="Tipo",
+            xaxis=dict(
+                backgroundcolor="rgba(0,0,0,0)", gridcolor="rgba(255,255,255,0.06)"
+            ),
+            yaxis=dict(
+                backgroundcolor="rgba(0,0,0,0)", gridcolor="rgba(255,255,255,0.06)"
+            ),
+            zaxis=dict(
+                backgroundcolor="rgba(0,0,0,0)",
+                gridcolor="rgba(255,255,255,0.06)",
+                tickvals=list(type_codes.values()),
+                ticktext=list(type_codes.keys()),
+            ),
         ),
     )
-    return html.Div(children=[
-        insights,
-        html.Div(style={"display": "flex", "gap": "14px", "flexWrap": "wrap"}, children=[
-            html.Div(style={**BLOCK_STYLE, "flex": "3", "minWidth": "300px"}, children=[
-                html.Div(style=CARD_BODY, children=[
-                    mondrian_title("Mapa de Sanitización"),
-                    dcc.Graph(figure=fig, style={"margin": "0"}),
-                ]),
-            ]),
-            html.Div(style={**BLOCK_STYLE, "flex": "1", "minWidth": "140px",
-                             "display": "flex", "flexDirection": "column", "gap": "14px",
-                             "backgroundColor": "transparent", "border": "none", "padding": "0"}, children=[
-                count_block,
-                html.Div(style={**BLOCK_STYLE, "backgroundColor": "#0f2a4a", "flex": "1",
-                                 "display": "flex", "alignItems": "center", "justifyContent": "center",
-                                 "minHeight": "90px"}, children=[
-                    html.Div(f"{len(df['type'].unique())} tipos", style={
-                        "color": TEXT, "fontSize": "1.4rem", "fontWeight": "800",
-                        "fontFamily": FONT_DATA,
-                    }),
-                ]),
-                html.Div(style={**BLOCK_STYLE, "backgroundColor": "#12261c", "flex": "1",
-                                 "display": "flex", "alignItems": "center", "justifyContent": "center",
-                                 "minHeight": "90px"}, children=[
-                    html.Div(f"{df['lat'].mean():.4f}°", style={
-                        "color": TEXT, "fontSize": "1.4rem", "fontWeight": "800",
-                        "fontFamily": FONT_DATA,
-                    }),
-                ]),
-            ]),
-        ]),
-        html.Div(style={**BLOCK_STYLE, "marginTop": "16px"}, children=[
-            html.Div(style=CARD_BODY, children=[
-                mondrian_title("Torre 3D por Tipo"),
-                dcc.Graph(figure=fig3d),
-            ]),
-        ]),
-    ])
+    return html.Div(
+        children=[
+            insights,
+            html.Div(
+                style={"display": "flex", "gap": "14px", "flexWrap": "wrap"},
+                children=[
+                    html.Div(
+                        style={**BLOCK_STYLE, "flex": "3", "minWidth": "300px"},
+                        children=[
+                            html.Div(
+                                style=CARD_BODY,
+                                children=[
+                                    mondrian_title("Mapa de Sanitización"),
+                                    dcc.Graph(figure=fig, style={"margin": "0"}),
+                                ],
+                            ),
+                        ],
+                    ),
+                    html.Div(
+                        style={
+                            **BLOCK_STYLE,
+                            "flex": "1",
+                            "minWidth": "140px",
+                            "display": "flex",
+                            "flexDirection": "column",
+                            "gap": "14px",
+                            "backgroundColor": "transparent",
+                            "border": "none",
+                            "padding": "0",
+                        },
+                        children=[
+                            count_block,
+                            html.Div(
+                                style={
+                                    **BLOCK_STYLE,
+                                    "backgroundColor": "#0f2a4a",
+                                    "flex": "1",
+                                    "display": "flex",
+                                    "alignItems": "center",
+                                    "justifyContent": "center",
+                                    "minHeight": "90px",
+                                },
+                                children=[
+                                    html.Div(
+                                        f"{len(df['type'].unique())} tipos",
+                                        style={
+                                            "color": TEXT,
+                                            "fontSize": "1.4rem",
+                                            "fontWeight": "800",
+                                            "fontFamily": FONT_DATA,
+                                        },
+                                    ),
+                                ],
+                            ),
+                            html.Div(
+                                style={
+                                    **BLOCK_STYLE,
+                                    "backgroundColor": "#12261c",
+                                    "flex": "1",
+                                    "display": "flex",
+                                    "alignItems": "center",
+                                    "justifyContent": "center",
+                                    "minHeight": "90px",
+                                },
+                                children=[
+                                    html.Div(
+                                        f"{df['lat'].mean():.4f}°",
+                                        style={
+                                            "color": TEXT,
+                                            "fontSize": "1.4rem",
+                                            "fontWeight": "800",
+                                            "fontFamily": FONT_DATA,
+                                        },
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+            html.Div(
+                style={**BLOCK_STYLE, "marginTop": "16px"},
+                children=[
+                    html.Div(
+                        style=CARD_BODY,
+                        children=[
+                            mondrian_title("Torre 3D por Tipo"),
+                            dcc.Graph(figure=fig3d),
+                        ],
+                    ),
+                ],
+            ),
+        ]
+    )
 
 
 def dist_tab(df):
@@ -427,19 +737,25 @@ def dist_tab(df):
     tipo_counts = df["type"].value_counts()
 
     fig_bar = px.bar(
-        x=tipo_counts.index, y=tipo_counts.values,
-        color=tipo_counts.index, color_discrete_map=TYPE_COLORS,
+        x=tipo_counts.index,
+        y=tipo_counts.values,
+        color=tipo_counts.index,
+        color_discrete_map=TYPE_COLORS,
         labels={"x": "Tipo", "y": "Cantidad"},
         title="Puntos por Tipo — clic una barra para filtrar",
     )
     fig_bar.update_traces(
-        hovertemplate="<b>%{x}</b><br>Cantidad: %{y}<br>%{y:.0%} de " + str(total) + "<extra></extra>",
+        hovertemplate="<b>%{x}</b><br>Cantidad: %{y}<br>%{y:.0%} de "
+        + str(total)
+        + "<extra></extra>",
     )
     fig_bar.update_layout(**CHART_TEMPLATE, height=380, showlegend=False, bargap=0.3)
 
     fig_pie = px.pie(
-        values=tipo_counts.values, names=tipo_counts.index,
-        color=tipo_counts.index, color_discrete_map=TYPE_COLORS,
+        values=tipo_counts.values,
+        names=tipo_counts.index,
+        color=tipo_counts.index,
+        color_discrete_map=TYPE_COLORS,
     )
     fig_pie.update_traces(
         textfont_size=12,
@@ -452,7 +768,9 @@ def dist_tab(df):
     df_copy["street"] = df_copy["street"].str.strip()
     street_counts = df_copy["street"].dropna().value_counts().head(15)
     fig_streets = px.bar(
-        x=street_counts.values, y=street_counts.index, orientation="h",
+        x=street_counts.values,
+        y=street_counts.index,
+        orientation="h",
         color_discrete_sequence=[BLUE],
     )
     fig_streets.update_traces(
@@ -461,40 +779,79 @@ def dist_tab(df):
     fig_streets.update_layout(**CHART_TEMPLATE, height=500, showlegend=False)
     fig_streets.update_layout(yaxis_categoryorder="total ascending")
 
-    return html.Div(children=[
-        html.Div(id="dist-crossfilter-output", style={"fontWeight": "600", "color": MUTED, "padding": "4px 20px 12px 20px"}),
-        html.Div(style={"display": "flex", "gap": "14px", "flexWrap": "wrap"}, children=[
-            html.Div(style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px"}, children=[
-                html.Div(style=CARD_BODY, children=[
-                    mondrian_title("Puntos por Tipo"),
-                    dcc.Graph(id="dist-type-bar", figure=fig_bar),
-                ]),
-            ]),
-            html.Div(style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px"}, children=[
-                html.Div(style=CARD_BODY, children=[
-                    mondrian_title("Distribución por Tipo"),
-                    dcc.Graph(figure=fig_pie),
-                ]),
-            ]),
-            html.Div(style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px"}, children=[
-                html.Div(style=CARD_BODY, children=[
-                    mondrian_title("Calles Más Frecuentes"),
-                    dcc.Graph(figure=fig_streets),
-                ]),
-            ]),
-            html.Div(style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px"}, children=[
-                html.Div(style=CARD_BODY, children=[
-                    mondrian_title("Nube de Puntos — latitud por tipo"),
-                    dcc.Graph(figure=_strip_fig(df)),
-                ]),
-            ]),
-        ]),
-    ])
+    return html.Div(
+        children=[
+            html.Div(
+                id="dist-crossfilter-output",
+                style={
+                    "fontWeight": "600",
+                    "color": MUTED,
+                    "padding": "4px 20px 12px 20px",
+                },
+            ),
+            html.Div(
+                style={"display": "flex", "gap": "14px", "flexWrap": "wrap"},
+                children=[
+                    html.Div(
+                        style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px"},
+                        children=[
+                            html.Div(
+                                style=CARD_BODY,
+                                children=[
+                                    mondrian_title("Puntos por Tipo"),
+                                    dcc.Graph(id="dist-type-bar", figure=fig_bar),
+                                ],
+                            ),
+                        ],
+                    ),
+                    html.Div(
+                        style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px"},
+                        children=[
+                            html.Div(
+                                style=CARD_BODY,
+                                children=[
+                                    mondrian_title("Distribución por Tipo"),
+                                    dcc.Graph(figure=fig_pie),
+                                ],
+                            ),
+                        ],
+                    ),
+                    html.Div(
+                        style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px"},
+                        children=[
+                            html.Div(
+                                style=CARD_BODY,
+                                children=[
+                                    mondrian_title("Calles Más Frecuentes"),
+                                    dcc.Graph(figure=fig_streets),
+                                ],
+                            ),
+                        ],
+                    ),
+                    html.Div(
+                        style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px"},
+                        children=[
+                            html.Div(
+                                style=CARD_BODY,
+                                children=[
+                                    mondrian_title("Nube de Puntos — latitud por tipo"),
+                                    dcc.Graph(figure=_strip_fig(df)),
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ]
+    )
 
 
 def _strip_fig(df):
     fig = px.strip(
-        df, x="type", y="lat", color="type",
+        df,
+        x="type",
+        y="lat",
+        color="type",
         title="Dot-density: cada punto es una solicitud",
         color_discrete_map=TYPE_COLORS,
         hover_name="name",
@@ -504,7 +861,9 @@ def _strip_fig(df):
         hovertemplate="<b>%{hovertext}</b><br>Tipo: %{x}<br>Lat: %{y:.4f}°<extra></extra>",
     )
     fig.update_layout(
-        **CHART_TEMPLATE, height=500, showlegend=False,
+        **CHART_TEMPLATE,
+        height=500,
+        showlegend=False,
         yaxis_title="Latitud",
     )
     return fig
@@ -524,52 +883,90 @@ def dist_crossfilter(click):
 
 def analysis_tab(df):
     fig_lat = px.histogram(
-        df, x="lat", nbins=20,
+        df,
+        x="lat",
+        nbins=20,
         color_discrete_sequence=[RED],
     )
     fig_lat.update_layout(
-        **CHART_TEMPLATE, height=320, title="Distribución de Latitud",
-        xaxis_title="Latitud", yaxis_title="Cantidad",
+        **CHART_TEMPLATE,
+        height=320,
+        title="Distribución de Latitud",
+        xaxis_title="Latitud",
+        yaxis_title="Cantidad",
     )
 
     fig_lon = px.histogram(
-        df, x="lon", nbins=20,
+        df,
+        x="lon",
+        nbins=20,
         color_discrete_sequence=[BLUE],
     )
     fig_lon.update_layout(
-        **CHART_TEMPLATE, height=320, title="Distribución de Longitud",
-        xaxis_title="Longitud", yaxis_title="Cantidad",
+        **CHART_TEMPLATE,
+        height=320,
+        title="Distribución de Longitud",
+        xaxis_title="Longitud",
+        yaxis_title="Cantidad",
     )
 
     fig_scatter = px.scatter(
-        df, x="lon", y="lat",
-        color="type", color_discrete_map=TYPE_COLORS,
+        df,
+        x="lon",
+        y="lat",
+        color="type",
+        color_discrete_map=TYPE_COLORS,
     )
     fig_scatter.update_traces(
         marker=dict(size=8, opacity=0.8),
         hovertemplate="Lon: %{x:.4f}<br>Lat: %{y:.4f}<extra>Clic para filtrar</extra>",
     )
     fig_scatter.update_layout(
-        **CHART_TEMPLATE, height=450, title="Mapa de Densidad — clic para filtrar",
-        xaxis_title="Longitud", yaxis_title="Latitud",
+        **CHART_TEMPLATE,
+        height=450,
+        title="Mapa de Densidad — clic para filtrar",
+        xaxis_title="Longitud",
+        yaxis_title="Latitud",
     )
 
-    return html.Div(style={"display": "flex", "gap": "14px", "flexWrap": "wrap"}, children=[
-        html.Div(style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px"}, children=[
-            html.Div(style=CARD_BODY, children=[
-                mondrian_title("Distribución Geográfica"),
-                dcc.Graph(figure=fig_lat),
-                dcc.Graph(figure=fig_lon),
-            ]),
-        ]),
-        html.Div(style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px"}, children=[
-            html.Div(style=CARD_BODY, children=[
-                mondrian_title("Mapa de Densidad"),
-                dcc.Graph(id="analysis-scatter", figure=fig_scatter),
-                html.Div(id="analysis-crossfilter-output", style={"marginTop": "8px", "fontWeight": "600", "color": "#8b94a3"}),
-            ]),
-        ]),
-    ])
+    return html.Div(
+        style={"display": "flex", "gap": "14px", "flexWrap": "wrap"},
+        children=[
+            html.Div(
+                style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px"},
+                children=[
+                    html.Div(
+                        style=CARD_BODY,
+                        children=[
+                            mondrian_title("Distribución Geográfica"),
+                            dcc.Graph(figure=fig_lat),
+                            dcc.Graph(figure=fig_lon),
+                        ],
+                    ),
+                ],
+            ),
+            html.Div(
+                style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px"},
+                children=[
+                    html.Div(
+                        style=CARD_BODY,
+                        children=[
+                            mondrian_title("Mapa de Densidad"),
+                            dcc.Graph(id="analysis-scatter", figure=fig_scatter),
+                            html.Div(
+                                id="analysis-crossfilter-output",
+                                style={
+                                    "marginTop": "8px",
+                                    "fontWeight": "600",
+                                    "color": "#8b94a3",
+                                },
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
 
 
 @callback(
@@ -586,31 +983,46 @@ def analysis_crossfilter(click):
 
 def data_tab(df):
     from dash import dash_table
-    return html.Div(style={
-        **BLOCK_STYLE, "padding": "20px",
-    }, children=[
-        mondrian_title(f"Todos los Registros ({len(df)} puntos)"),
-        dash_table.DataTable(
-            data=df.to_dict("records"),
-            columns=[{"name": c, "id": c} for c in ["name", "description", "lat", "lon", "type"]],
-            sort_action="native", page_size=20, filter_action="native",
-            style_table={"overflowX": "auto"},
-            style_header={
-                "backgroundColor": "#0f2a4a", "color": TEXT,
-                "fontWeight": "700", "fontSize": "0.8rem",
-                "border": "1px solid rgba(255,255,255,0.08)",
-            },
-            style_cell={
-                "backgroundColor": CARD, "color": TEXT,
-                "border": "1px solid rgba(255,255,255,0.06)", "padding": "10px 12px",
-                "textAlign": "left", "fontFamily": FONT_UI,
-                "fontSize": "0.85rem",
-            },
-            style_data_conditional=[
-                {"if": {"row_index": "odd"}, "backgroundColor": "#0d1320"},
-            ],
-        ),
-    ])
+
+    return html.Div(
+        style={
+            **BLOCK_STYLE,
+            "padding": "20px",
+        },
+        children=[
+            mondrian_title(f"Todos los Registros ({len(df)} puntos)"),
+            dash_table.DataTable(
+                data=df.to_dict("records"),
+                columns=[
+                    {"name": c, "id": c}
+                    for c in ["name", "description", "lat", "lon", "type"]
+                ],
+                sort_action="native",
+                page_size=20,
+                filter_action="native",
+                style_table={"overflowX": "auto"},
+                style_header={
+                    "backgroundColor": "#0f2a4a",
+                    "color": TEXT,
+                    "fontWeight": "700",
+                    "fontSize": "0.8rem",
+                    "border": "1px solid rgba(255,255,255,0.08)",
+                },
+                style_cell={
+                    "backgroundColor": CARD,
+                    "color": TEXT,
+                    "border": "1px solid rgba(255,255,255,0.06)",
+                    "padding": "10px 12px",
+                    "textAlign": "left",
+                    "fontFamily": FONT_UI,
+                    "fontSize": "0.85rem",
+                },
+                style_data_conditional=[
+                    {"if": {"row_index": "odd"}, "backgroundColor": "#0d1320"},
+                ],
+            ),
+        ],
+    )
 
 
 if __name__ == "__main__":
