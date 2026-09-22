@@ -547,10 +547,10 @@ def analysis_tab(df):
     )
     fig_scatter.update_traces(
         marker=dict(size=8, opacity=0.8),
-        hovertemplate="Lon: %{x:.4f}<br>Lat: %{y:.4f}<extra></extra>",
+        hovertemplate="Lon: %{x:.4f}<br>Lat: %{y:.4f}<extra>Clic para filtrar</extra>",
     )
     fig_scatter.update_layout(
-        **CHART_TEMPLATE, height=450, title="Mapa de Densidad",
+        **CHART_TEMPLATE, height=450, title="Mapa de Densidad — clic para filtrar",
         xaxis_title="Longitud", yaxis_title="Latitud",
     )
 
@@ -565,10 +565,23 @@ def analysis_tab(df):
         html.Div(style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px"}, children=[
             html.Div(style=CARD_BODY, children=[
                 mondrian_title("Mapa de Densidad"),
-                dcc.Graph(figure=fig_scatter),
+                dcc.Graph(id="analysis-scatter", figure=fig_scatter),
+                html.Div(id="analysis-crossfilter-output", style={"marginTop": "8px", "fontWeight": "600", "color": "#8b94a3"}),
             ]),
         ]),
     ])
+
+
+@callback(
+    Output("analysis-crossfilter-output", "children"),
+    Input("analysis-scatter", "clickData"),
+    prevent_initial_call=True,
+)
+def analysis_crossfilter(click):
+    if not click:
+        return no_update
+    pt = click["points"][0]
+    return f"Punto: ({pt.get('x', '?')}, {pt.get('y', '?')}) — usa los filtros superiores para aislar su zona."
 
 
 def data_tab(df):
