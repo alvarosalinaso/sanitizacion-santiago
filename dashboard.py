@@ -338,11 +338,36 @@ def map_tab(df):
         insight_card("¿Decisión?", "Asignar rutas por calle frecuente y tipo dominante; clic en barras de Distribución para filtrar.", YELLOW),
         sparkline(by_type.values.tolist(), RED),
     ])
+    type_codes = {t: i for i, t in enumerate(sorted(df["type"].unique()))}
+    fig3d = go.Figure()
+    for t in sorted(df["type"].unique()):
+        tdf = df[df["type"] == t]
+        fig3d.add_trace(go.Scatter3d(
+            x=tdf["lon"], y=tdf["lat"], z=[type_codes[t]] * len(tdf),
+            mode="markers", name=t,
+            marker=dict(size=5, opacity=0.85,
+                        color=TYPE_COLORS.get(t, RED)),
+            hovertemplate=f"<b>Tipo: {t}</b><br>Lon: %{{x:.4f}}<br>Lat: %{{y:.4f}}<extra></extra>",
+        ))
+    fig3d.update_layout(
+        template="plotly_white", paper_bgcolor=WHITE,
+        height=550, margin=dict(t=10, b=10, l=10, r=10),
+        title="TORRE 3D POR TIPO — arrastra para rotar",
+        scene=dict(
+            xaxis_title="Longitud", yaxis_title="Latitud", zaxis_title="Tipo",
+            xaxis=dict(backgroundcolor=WHITE, gridcolor="#dddddd"),
+            yaxis=dict(backgroundcolor=WHITE, gridcolor="#dddddd"),
+            zaxis=dict(backgroundcolor=WHITE, gridcolor="#dddddd",
+                       tickvals=list(type_codes.values()), ticktext=list(type_codes.keys())),
+        ),
+        legend=dict(bgcolor=WHITE, bordercolor=BLACK, borderwidth=2,
+                    font=dict(color=BLACK, size=11)),
+    )
     return html.Div(children=[
         insights,
         html.Div(style={"display": "flex", "gap": "0", "flexWrap": "wrap"}, children=[
         html.Div(style={**BLOCK_STYLE, "flex": "3", "minWidth": "300px", "backgroundColor": RED}, children=[
-            html.Div(CARD_BODY, children=[
+            html.Div(style=CARD_BODY, children=[
                 mondrian_title("Mapa de Sanitización"),
                 dcc.Graph(figure=fig, style={"margin": "0"}),
             ]),
@@ -367,6 +392,12 @@ def map_tab(df):
                 }),
             ]),
         ]),
+        ]),
+        html.Div(style={**BLOCK_STYLE, "backgroundColor": WHITE, "marginTop": "0"}, children=[
+            html.Div(style=CARD_BODY, children=[
+                mondrian_title("Torre 3D por Tipo"),
+                dcc.Graph(figure=fig3d),
+            ]),
         ]),
     ])
 
@@ -428,28 +459,29 @@ yaxis={"categoryorder": "total ascending"},
         html.Div(id="dist-crossfilter-output", style={"fontWeight": "800", "padding": "10px 20px", "borderBottom": MONDRIAN_BORDER}),
         html.Div(style={"display": "flex", "gap": "0", "flexWrap": "wrap"}, children=[
         html.Div(style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px", "backgroundColor": WHITE}, children=[
-            html.Div(CARD_BODY, children=[
+            html.Div(style=CARD_BODY, children=[
                 mondrian_title("Puntos por Tipo"),
                 dcc.Graph(id="dist-type-bar", figure=fig_bar),
             ]),
         ]),
         html.Div(style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px", "backgroundColor": BLUE}, children=[
-            html.Div(CARD_BODY, children=[
+            html.Div(style=CARD_BODY, children=[
                 mondrian_title("Distribución por Tipo"),
                 dcc.Graph(figure=fig_pie),
             ]),
         ]),
         html.Div(style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px", "backgroundColor": WHITE}, children=[
-            html.Div(CARD_BODY, children=[
+            html.Div(style=CARD_BODY, children=[
                 mondrian_title("Calles Más Frecuentes"),
                 dcc.Graph(figure=fig_streets),
             ]),
         ]),
         html.Div(style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px", "backgroundColor": YELLOW}, children=[
-            html.Div(CARD_BODY, children=[
+            html.Div(style=CARD_BODY, children=[
                 mondrian_title("Nube de Puntos — latitud por tipo"),
                 dcc.Graph(figure=_strip_fig(df)),
             ]),
+        ]),
         ]),
     ])
 
@@ -524,14 +556,14 @@ def analysis_tab(df):
 
     return html.Div(style={"display": "flex", "gap": "0", "flexWrap": "wrap"}, children=[
         html.Div(style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px", "backgroundColor": WHITE}, children=[
-            html.Div(CARD_BODY, children=[
+            html.Div(style=CARD_BODY, children=[
                 mondrian_title("Distribución Geográfica"),
                 dcc.Graph(figure=fig_lat),
                 dcc.Graph(figure=fig_lon),
             ]),
         ]),
         html.Div(style={**BLOCK_STYLE, "flex": "1", "minWidth": "300px", "backgroundColor": YELLOW}, children=[
-            html.Div(CARD_BODY, children=[
+            html.Div(style=CARD_BODY, children=[
                 mondrian_title("Mapa de Densidad"),
                 dcc.Graph(figure=fig_scatter),
             ]),
